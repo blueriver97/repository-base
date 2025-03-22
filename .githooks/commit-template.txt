@@ -1,0 +1,13 @@
+#
+#  브랜치    | 작성 샘플                        | 예시                                     |
+#  ----------|----------------------------------|------------------------------------------|
+#  main      | vX.Y.Z: <변경 요약>              | v1.0.0: 배포                             |
+#            |                                  | v1.0.1: Merge branch hotfix/001          |
+#            |                                  | v1.1.0: Merge branch release/001         |
+#  release/* | release/vX.Y.Z: <내용>           | release/v1.0.0: 변경 이력, 안정화        |
+#  hotfix/*  | hotfix/<id>: <버그 설명>         | hotfix/001: 버그 긴급 수정               |
+#  develop   | develop: <내용>                  | develop: 코드 리팩토링, 오타, 오류 수정  |
+#            | develop: Merge branch <브랜치명> | develop: Merge branch feature/001 - 내용 |
+#            |                                  | develop: Merge branch hotfix/001 - 내용  |
+#            |                                  | develop: Merge branch release/v1.0.0     |
+#  feature/* | feature/<id>: <내용>             | feature/001: 기능 추가                   |

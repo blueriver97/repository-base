@@ -1,0 +1,81 @@
+name: CD
+
+on:
+  #  push:
+  #    branches:
+  #      - main
+  #      - develop
+  workflow_dispatch: # checkov:skip=CKV_GHA_7
+    inputs:
+      environment:
+        description: "배포 환경 선택 (prod 또는 dev)"
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') || (github.event_name == 'push' && github.ref == 'refs/heads/develop') }}
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          ref: "develop"
+      - name: 환경 변수 설정
+        run: echo "PROJECT_NAME=$(echo '${{ github.repository }}' | cut -d'/' -f2)" >> "$GITHUB_ENV"
+      - name: 배포 서버 환경 준비
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USER }}
+          key: ${{ secrets.DEV_DEPLOY_KEY }}
+          script: |
+            sudo mkdir -p /opt/${{ env.PROJECT_NAME }}
+            sudo chown -R ${{ secrets.DEV_USER }}:${{ secrets.DEV_USER }} /opt/${{ env.PROJECT_NAME }}
+      - name: 코드 배포
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -az --delete
+          path: ./
+          remote_path: /opt/${{ env.PROJECT_NAME }}
+          remote_host: ${{ secrets.DEV_HOST }}
+          remote_user: ${{ secrets.DEV_USER }}
+          remote_key: ${{ secrets.DEV_DEPLOY_KEY }}
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod') || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          ref: "main"
+      - name: 환경 변수 설정
+        run: echo "PROJECT_NAME=$(echo '${{ github.repository }}' | cut -d'/' -f2)" >> "$GITHUB_ENV"
+      - name: 배포 서버 환경 준비
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_DEPLOY_KEY }}
+          script: |
+            sudo mkdir -p /opt/${{ env.PROJECT_NAME }}
+            sudo chown -R ${{ secrets.PROD_USER }}:${{ secrets.PROD_USER }} /opt/${{ env.PROJECT_NAME }}
+      - name: 코드 배포
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -az --delete
+          path: ./
+          remote_path: /opt/${{ env.PROJECT_NAME }}
+          remote_host: ${{ secrets.PROD_HOST }}
+          remote_user: ${{ secrets.PROD_USER }}
+          remote_key: ${{ secrets.PROD_DEPLOY_KEY }}

@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# 커밋 메시지 템플릿 파일 경로
+TEMPLATE_FILE=".githooks/commit-template.txt"
+
+# 커밋 메시지 파일 경로 (커밋 메시지 파일이 위치하는 곳)
+COMMIT_MSG_FILE="$1"
+
+# 임시 파일 경로
+TEMP_FILE="$(mktemp)"
+
+# opencommit CLI 경로
+# OPENCOMMIT_CLI="/opt/homebrew/lib/node_modules/opencommit/out/cli.cjs"
+OPENCOMMIT_CLI=".git/hooks/prepare-commit-msg"
+
+merge() {
+	[ "$2" = "merge" ]
+}
+
+# 소스 브랜치 이름 추출
+current_branch() {
+	git branch --show-current
+}
+
+# 병합 메시지로부터 브랜치 이름 추출
+merge_branch() {
+	grep -o "Merge branch '[^']*" <.git/MERGE_MSG | sed "s/Merge branch '//"
+}
+
+# 소스 브랜치가 허용된 브랜치 목록에 있는지 확인
+from_allowed_branch() {
+	current_branch=$(current_branch)
+	merge_branch=$(merge_branch)
+
+	current_branch_type=$(echo "$current_branch" | cut -d'/' -f1)
+	merge_branch_type=$(echo "$merge_branch" | cut -d'/' -f1)
+
+	# 현재 브랜치에 따른 허용된 병합 소스 브랜치 목록 설정
+	if [ "$current_branch_type" = "main" ]; then
+		ALLOWED_BRANCHES="main release hotfix"
+	elif [ "$current_branch_type" = "release" ]; then
+		ALLOWED_BRANCHES="release develop"
+	elif [ "$current_branch_type" = "hotfix" ]; then
+		ALLOWED_BRANCHES="hotfix"
+	elif [ "$current_branch_type" = "develop" ]; then
+		ALLOWED_BRANCHES="hotfix release develop feature"
+	elif [ "$current_branch_type" = "feature" ]; then
+		ALLOWED_BRANCHES="feature"
+	else
+		# main 또는 develop이 아닌 경우에는 병합을 허용하지 않음
+		ALLOWED_BRANCHES=""
+	fi
+
+	# 병합하려는 브랜치가 허용된 목록에 포함되어 있는지 확인
+	allowed=$(echo "$ALLOWED_BRANCHES" | grep -w "$merge_branch_type")
+
+	# 포함되어 있지 않으면 금지된 병합으로 간주
+	[ -z "$allowed" ]
+}
+
+# 'git commit --amend' 명령은 아래 작업 패스
+if [ "$2" = "commit" ]; then
+	exit 0
+fi
+
+# 주요 로직
+if merge "$@" && from_allowed_branch; then
+	printf "\033[1;31m%s 브랜치를 *%s* 브랜치로 병합할 수 없습니다.\033[0m\n" "$merge_branch" "$current_branch"
+	printf "\033[1;33m허용된 브랜치 목록으로만 병합할 수 있습니다.\033[0m\n"
+	printf " main    | release/*, hotfix/*           \n"
+	printf " release | develop                       \n"
+	printf " develop | hotfix/*, release/*, feature/*\n"
+	printf "\033[1;33m작업 중인 변경 사항을 취소하려면 다음 명령어를 실행하세요.\033[0m\n"
+	printf "\033[1;33mgit reset --merge\033[0m\n"
+	exit 1
+fi
+
+current_branch=$(current_branch)
+current_branch_type=$(echo "$current_branch" | cut -d'/' -f1)
+
+# opencommit 실행하여 자동 커밋 메시지 생성
+OC_MSG=$(node "$OPENCOMMIT_CLI" "$COMMIT_MSG_FILE" | awk '/^——————————————————$/ {if (p) exit; p=1; next} p' || echo "")
+OC_MSG=$(echo "$OC_MSG" | cut -d':' -f2 | sed 's/^ *//;s/ *$//')
+
+if [ "$current_branch_type" != "main" ]; then
+	# opencommit 메시지가 있으면 사용, 없으면 기존 방식 유지
+	if [ -n "$OC_MSG" ]; then
+		echo "#$current_branch: $OC_MSG" >"$TEMP_FILE"
+	else
+		echo "#$current_branch: " >"$TEMP_FILE"
+		cat "$COMMIT_MSG_FILE" >>"$TEMP_FILE"
+	fi
+	mv "$TEMP_FILE" "$COMMIT_MSG_FILE"
+else
+	LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+
+	# 버전 패턴 찾기 (예: v0.0.0)
+	if [[ $LAST_COMMIT_MSG =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+		major=${BASH_REMATCH[1]}
+		minor=${BASH_REMATCH[2]}
+		patch=${BASH_REMATCH[3]}
+		new_patch=$((patch + 1))
+		new_version="v${major}.${minor}.${new_patch}"
+	else
+		new_version="v0.0.1"
+	fi
+
+	if [ -n "$OC_MSG" ]; then
+		echo "#$new_version: $OC_MSG" >"$TEMP_FILE"
+	else
+		echo "#$new_version: " >"$TEMP_FILE"
+		echo "#$LAST_COMMIT_MSG" >>"$TEMP_FILE"
+		cat "$COMMIT_MSG_FILE" >>"$TEMP_FILE"
+	fi
+	mv "$TEMP_FILE" "$COMMIT_MSG_FILE"
+fi
+
+if [ -f "$TEMPLATE_FILE" ]; then
+	cat "$TEMPLATE_FILE" >>"$COMMIT_MSG_FILE"
+fi
