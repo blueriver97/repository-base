@@ -15,9 +15,5 @@
 ## Setup
 
 ```bash
-pip install -U pip setuptools wheel pre-commit
-
-# tools: pre-commit
-pre-commit autoupdate
-bash init.sh
+./init.sh
 ```
