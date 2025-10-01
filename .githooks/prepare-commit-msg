@@ -36,20 +36,14 @@ from_allowed_branch() {
 	merge_branch_type=$(echo "$merge_branch" | cut -d'/' -f1)
 
 	# 현재 브랜치에 따른 허용된 병합 소스 브랜치 목록 설정
-	if [ "$current_branch_type" = "main" ]; then
-		ALLOWED_BRANCHES="main release hotfix"
-	elif [ "$current_branch_type" = "release" ]; then
-		ALLOWED_BRANCHES="release develop"
-	elif [ "$current_branch_type" = "hotfix" ]; then
-		ALLOWED_BRANCHES="hotfix"
-	elif [ "$current_branch_type" = "develop" ]; then
-		ALLOWED_BRANCHES="hotfix release develop feature"
-	elif [ "$current_branch_type" = "feature" ]; then
-		ALLOWED_BRANCHES="feature"
-	else
-		# main 또는 develop이 아닌 경우에는 병합을 허용하지 않음
-		ALLOWED_BRANCHES=""
-	fi
+    case "$current_branch_type" in
+        main)    ALLOWED_BRANCHES="main release hotfix" ;;
+        release) ALLOWED_BRANCHES="release develop" ;;
+        hotfix)  ALLOWED_BRANCHES="hotfix" ;;
+        develop) ALLOWED_BRANCHES="hotfix release develop feature" ;;
+        feature) ALLOWED_BRANCHES="feature" ;;
+        *)       ALLOWED_BRANCHES="" ;;
+    esac
 
 	# 병합하려는 브랜치가 허용된 목록에 포함되어 있는지 확인
 	allowed=$(echo "$ALLOWED_BRANCHES" | grep -w "$merge_branch_type")

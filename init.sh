@@ -32,16 +32,21 @@ install_node() {
     brew link --force --overwrite node@${NODE_VERSION}
 
   elif [ "$OS" = "Linux" ]; then
-    echo "[*] Ubuntu 환경 감지됨"
-
-    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
-    sudo apt-get update
-    sudo apt-get install -y nodejs
-  else
-    echo "지원되지 않는 OS입니다: $OS"
-    exit 1
+    if command -v apt-get &>/dev/null; then
+        echo "[*] Ubuntu/Debian 환경 감지됨"
+        curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
+        sudo apt-get update
+        sudo apt-get install -y nodejs
+    elif command -v dnf &>/dev/null; then
+        echo "[*] CentOS/RHEL/Amazon Linux 환경 감지됨"
+        # Amazon Linux의 경우 dnf가 기본일 수 있습니다.
+        sudo dnf -y update
+        sudo dnf install -y nodejs${NODE_VERSION} # 예시이며, 실제 패키지 이름은 다를 수 있습니다.
+    else
+        echo "지원되는 Linux 배포판이 아닙니다."
+        exit 1
+    fi
   fi
-
   echo "[+] Node 설치 완료: $(node -v)"
   echo "[+] NPM 설치 완료: $(npm -v)"
 }
