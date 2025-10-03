@@ -34,7 +34,7 @@ jobs:
 
       - name: Prepare server
         # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
-        if: (github.ref == 'ref/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'ref/heads/main'
+        if: (github.ref == 'refs/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
@@ -45,7 +45,7 @@ jobs:
             sudo chown -R ${{ matrix.user }}:${{ matrix.user }} /opt/${{ env.PROJECT_NAME }}
 
       - name: Deploy code
-        if: (github.ref == 'ref/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'ref/heads/main'
+        if: (github.ref == 'refs/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'refs/heads/main'
         uses: burnett01/rsync-deployments@7.0.2
         with:
           switches: -az --delete
