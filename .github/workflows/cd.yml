@@ -30,19 +30,10 @@ jobs:
         include:
           - branch: develop
             environment: dev
-            host: ${{ secrets.DEV_HOST }}
-            user: ${{ secrets.DEV_USER }}
-            key: ${{ secrets.DEV_DEPLOY_KEY }}
           - branch: main
             environment: dev
-            host: ${{ secrets.DEV_HOST }}
-            user: ${{ secrets.DEV_USER }}
-            key: ${{ secrets.DEV_DEPLOY_KEY }}
           - branch: main
             environment: prod
-            host: ${{ secrets.PROD_HOST }}
-            user: ${{ secrets.PROD_USER }}
-            key: ${{ secrets.PROD_DEPLOY_KEY }}
 
     # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
     if: github.ref == matrix.branch && github.event.inputs.environment == matrix.environment
@@ -59,9 +50,9 @@ jobs:
       - name: Prepare server
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ matrix.host }}
-          username: ${{ matrix.user }}
-          key: ${{ matrix.key }}
+          host: ${{ matrix.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
+          user: ${{ matrix.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
+          key: ${{ matrix.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
           script: |
             sudo mkdir -p /opt/${{ env.PROJECT_NAME }}
             sudo chown -R ${{ matrix.user }}:${{ matrix.user }} /opt/${{ env.PROJECT_NAME }}
@@ -72,6 +63,6 @@ jobs:
           switches: -az --delete
           path: ./
           remote_path: /opt/${{ env.PROJECT_NAME }}
-          remote_host: ${{ matrix.host }}
-          remote_user: ${{ matrix.user }}
-          remote_key: ${{ matrix.key }}
+          remote_host: ${{ matrix.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
+          remote_user: ${{ matrix.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
+          remote_key: ${{ matrix.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
