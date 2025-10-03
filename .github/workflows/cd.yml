@@ -44,7 +44,7 @@ jobs:
           key: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
           script: |
             echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S mkdir -p /opt/${{ env.PROJECT_NAME }}
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S chown -R $USER_NAME:$USER_NAME /opt/${{ env.PROJECT_NAME }}
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S chown -R ${{ env.USER_NAME }}:${{ env.USER_NAME }} /opt/${{ env.PROJECT_NAME }}
 
       - name: Rsync deploy
         env:
