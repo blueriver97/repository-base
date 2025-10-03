@@ -5,13 +5,23 @@ name: CD
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: "배포 환경 선택 (prod 또는 dev)"
+      branch:
+        description: "브랜치 선택"
         required: true
-        type: string
+        type: choice
+        options:
+          - develop
+          - main
+      environment:
+        description: "배포 환경"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
 
 concurrency:
-  group: ${{ github.ref }}-${{ github.workflow }}
+  group: ${{ github.event.inputs.branch }}-${{ github.event.inputs.environment }}-${{ github.workflow }}
   cancel-in-progress: true
 
 permissions:
@@ -23,33 +33,39 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     # 입력받은 environment 값으로 strategy를 설정합니다.
+    # develop branch --> only dev, main branch --> dev, prod
     strategy:
       matrix:
         include:
-          - environment: dev
-            ref: "develop"
+          - branch: develop
+            environment: dev
             host: ${{ secrets.DEV_HOST }}
             user: ${{ secrets.DEV_USER }}
             key: ${{ secrets.DEV_DEPLOY_KEY }}
-          - environment: prod
-            ref: "main"
+          - branch: main
+            environment: dev
+            host: ${{ secrets.DEV_HOST }}
+            user: ${{ secrets.DEV_USER }}
+            key: ${{ secrets.DEV_DEPLOY_KEY }}
+          - branch: main
+            environment: prod
             host: ${{ secrets.PROD_HOST }}
             user: ${{ secrets.PROD_USER }}
             key: ${{ secrets.PROD_DEPLOY_KEY }}
 
     # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
-    if: github.event.inputs.environment == matrix.environment
+    if: github.event.inputs.branch == matrix.branch && github.event.inputs.environment == matrix.environment
 
     steps:
-      - name: 코드 체크아웃
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ matrix.ref }}
+          ref: ${{ github.event.inputs.branch }}
 
-      - name: 환경 변수 설정
+      - name: Set project name
         run: echo "PROJECT_NAME=$(echo '${{ github.repository }}' | cut -d'/' -f2)" >> "$GITHUB_ENV"
 
-      - name: 배포 서버 환경 준비
+      - name: Prepare server
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ matrix.host }}
@@ -59,7 +75,7 @@ jobs:
             sudo mkdir -p /opt/${{ env.PROJECT_NAME }}
             sudo chown -R ${{ matrix.user }}:${{ matrix.user }} /opt/${{ env.PROJECT_NAME }}
 
-      - name: 코드 배포
+      - name: Deploy code
         uses: burnett01/rsync-deployments@7.0.2
         with:
           switches: -az --delete
