@@ -122,6 +122,26 @@ setup_git_config() {
 }
 
 # ----------------------------------------
+# Wily 설치 및 코드 분석 빌드
+# ----------------------------------------
+install_and_run_wily() {
+  if ! command -v wily &>/dev/null; then
+    echo "[*] wily 설치 중..."
+    pip install wily
+  else
+    echo "[*] wily 이미 설치됨"
+  fi
+
+  if [ -d "src" ]; then
+    echo "[*] wily 빌드 수행 중 (src 디렉토리 기준)..."
+    wily build src
+    echo "[+] wily 빌드 완료"
+  else
+    echo "⚠️ src 디렉토리가 존재하지 않아 wily 빌드를 건너뜁니다."
+  fi
+}
+
+# ----------------------------------------
 # 실행
 # ----------------------------------------
 pip install -U pip setuptools wheel pre-commit
@@ -129,5 +149,6 @@ install_node
 install_global_packages
 setup_opencommit
 setup_git_config
+#install_and_run_wily
 
 echo "✅ 모든 설치 및 설정이 완료되었습니다."
