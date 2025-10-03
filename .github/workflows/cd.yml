@@ -3,13 +3,6 @@ name: CD
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: "브랜치 선택"
-        required: true
-        type: choice
-        options:
-          - develop
-          - main
       environment:
         description: "배포 환경"
         required: true
@@ -19,7 +12,7 @@ on:
           - prod
 
 concurrency:
-  group: ${{ github.event.inputs.branch }}-${{ github.event.inputs.environment }}-${{ github.workflow }}
+  group: ${{ github.ref }}-${{ github.event.inputs.environment }}-${{ github.workflow }}
   cancel-in-progress: true
 
 permissions:
@@ -52,13 +45,13 @@ jobs:
             key: ${{ secrets.PROD_DEPLOY_KEY }}
 
     # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
-    if: github.event.inputs.branch == matrix.branch && github.event.inputs.environment == matrix.environment
+    if: github.ref == matrix.branch && github.event.inputs.environment == matrix.environment
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ github.ref }}
 
       - name: Set project name
         run: echo "PROJECT_NAME=$(echo '${{ github.repository }}' | cut -d'/' -f2)" >> "$GITHUB_ENV"
