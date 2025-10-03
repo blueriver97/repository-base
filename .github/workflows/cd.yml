@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "배포 환경"
+        description: "Deployment Environment"
         required: true
         type: choice
         options:
@@ -17,12 +17,22 @@ concurrency:
 
 permissions:
   contents: read
-  actions: read
-  checks: read
 
 jobs:
   deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment }} # GitHub Environments 사용 권장
     runs-on: self-hosted
+
+    env:
+      REMOTE_HOST: ${{ secrets.HOST }}
+      REMOTE_USER: ${{ secrets.USER }}
+      REMOTE_GROUP: ${{ secrets.GROUP }}
+      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+
+    # 사용자의 의도를 반영한 조건: develop->dev, main->dev/prod
+    if: (github.ref == 'refs/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'refs/heads/main'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,32 +40,26 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: Set project name
-        run: echo "PROJECT_NAME=$(echo '${{ github.repository }}' | cut -d'/' -f2)" >> "$GITHUB_ENV"
+        run: echo "PROJECT_NAME=$(echo '${{ github.repository }}' | cut-d'/' -f2)" >> "$GITHUB_ENV"
 
-      - name: Prepare server
-        # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
-        if: (github.ref == 'refs/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'refs/heads/main'
-        uses: appleboy/ssh-action@v1
-        env:
-          USER_NAME: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
-          GROUP_NAME: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_GRUOP || secrets.PROD_GRUOP }}
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
-          username: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
-          key: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
+          ssh-private-key: ${{ env.DEPLOY_KEY }}
+
+      - name: Prepare server directory
+        # 중요: 서버에 비밀번호 없는 sudo 설정이 반드시 필요합니다.
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.REMOTE_HOST }}
+          username: ${{ env.REMOTE_USER }}
+          key: ${{ env.DEPLOY_KEY }}
           script: |
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S mkdir -p /opt/${{ env.PROJECT_NAME }}
-            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S chown -R ${{ env.USER_NAME }}:${{ env.GROUP_NAME }} /opt/${{ env.PROJECT_NAME }}
+            sudo mkdir -p /opt/${{ env.PROJECT_NAME }}
+            sudo chown -R ${{ env.REMOTE_USER }}:${{ env.REMOTE_GROUP }} /opt/${{ env.PROJECT_NAME }}
 
       - name: Rsync deploy
-        env:
-          SSH_KEY: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
-          REMOTE_USER: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
-          REMOTE_HOST: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-          rsync -az --delete -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p 22" ./ \
-            $REMOTE_USER@$REMOTE_HOST:/opt/${{ env.PROJECT_NAME }}
+          rsync -az --delete \
+            -e "ssh -o StrictHostKeyChecking=no -p 22" ./ \
+            ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }}:/opt/${{ env.PROJECT_NAME }}/
