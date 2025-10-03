@@ -23,18 +23,6 @@ permissions:
 jobs:
   deploy:
     runs-on: self-hosted
-    # 입력받은 environment 값으로 strategy를 설정합니다.
-    # develop branch --> only dev, main branch --> dev, prod
-    strategy:
-      matrix:
-        include:
-          - branch: refs/heads/develop
-            environment: dev
-          - branch: refs/heads/main
-            environment: dev
-          - branch: refs/heads/main
-            environment: prod
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -46,24 +34,23 @@ jobs:
 
       - name: Prepare server
         # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
-        if: github.ref == matrix.branch && github.event.inputs.environment == matrix.environment
+        if: (github.ref == 'ref/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'ref/heads/main'
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ matrix.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
-          user: ${{ matrix.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
-          key: ${{ matrix.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
+          host: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
+          username: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
+          key: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
           script: |
             sudo mkdir -p /opt/${{ env.PROJECT_NAME }}
             sudo chown -R ${{ matrix.user }}:${{ matrix.user }} /opt/${{ env.PROJECT_NAME }}
 
       - name: Deploy code
-        # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
-        if: github.ref == matrix.branch && github.event.inputs.environment == matrix.environment
+        if: (github.ref == 'ref/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'ref/heads/main'
         uses: burnett01/rsync-deployments@7.0.2
         with:
           switches: -az --delete
           path: ./
           remote_path: /opt/${{ env.PROJECT_NAME }}
-          remote_host: ${{ matrix.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
-          remote_user: ${{ matrix.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
-          remote_key: ${{ matrix.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
+          remote_host: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
+          remote_user: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
+          remote_key: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
