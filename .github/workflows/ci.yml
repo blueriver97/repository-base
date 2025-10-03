@@ -30,8 +30,6 @@ jobs:
           fetch-depth: 0
       - name: Secret Scanning
         uses: trufflesecurity/trufflehog@main
-        with:
-          extra_args: --results=all
 #  sonarqube:
 #    name: SonarQube
 #    runs-on: ubuntu-latest
