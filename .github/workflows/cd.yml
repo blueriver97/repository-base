@@ -35,9 +35,6 @@ jobs:
           - branch: main
             environment: prod
 
-    # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
-    if: github.ref == matrix.branch && github.event.inputs.environment == matrix.environment
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,6 +45,8 @@ jobs:
         run: echo "PROJECT_NAME=$(echo '${{ github.repository }}' | cut -d'/' -f2)" >> "$GITHUB_ENV"
 
       - name: Prepare server
+        # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
+        if: github.ref == matrix.branch && github.event.inputs.environment == matrix.environment
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ matrix.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
@@ -58,6 +57,8 @@ jobs:
             sudo chown -R ${{ matrix.user }}:${{ matrix.user }} /opt/${{ env.PROJECT_NAME }}
 
       - name: Deploy code
+        # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
+        if: github.ref == matrix.branch && github.event.inputs.environment == matrix.environment
         uses: burnett01/rsync-deployments@7.0.2
         with:
           switches: -az --delete
