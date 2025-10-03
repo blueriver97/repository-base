@@ -93,8 +93,17 @@ else
 		major=${BASH_REMATCH[1]}
 		minor=${BASH_REMATCH[2]}
 		patch=${BASH_REMATCH[3]}
-		new_patch=$((patch + 1))
-		new_version="v${major}.${minor}.${new_patch}"
+
+		if [[ $patch -ge 100 ]]; then
+      # PATCH(Z) 버전이 100 이상이면, MINOR(Y) 버전을 1 올리고 PATCH는 1로 리셋
+      new_minor=$((minor + 1))
+      new_patch=1
+      new_version="v${major}.${new_minor}.${new_patch}"
+    else
+      # 100 미만이면, 기존처럼 PATCH(Z) 버전만 1 올립니다.
+      new_patch=$((patch + 1))
+      new_version="v${major}.${minor}.${new_patch}"
+    fi
 	else
 		new_version="v0.0.1"
 	fi
