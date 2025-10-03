@@ -40,7 +40,10 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: Set project name
-        run: echo "PROJECT_NAME=$(echo '${{ github.repository }}' | cut-d'/' -f2)" >> "$GITHUB_ENV"
+        shell: bash
+        run: |
+          repo_full="${{ github.repository }}"
+          echo "PROJECT_NAME=${repo_full#*/}" >> "$GITHUB_ENV"
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.9.0
@@ -55,12 +58,12 @@ jobs:
         # $REMOTE_USER ALL=(ALL) NOPASSWD: /bin/mkdir, /bin/chown
         run: |
           ssh -o StrictHostKeyChecking=no ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }} << 'EOF'
-            sudo mkdir -p /opt/${{ env.PROJECT_NAME }}
-            sudo chown -R ${{ env.REMOTE_USER }}:${{ env.REMOTE_GROUP }} /opt/${{ env.PROJECT_NAME }}
+            sudo mkdir -p /opt/git/${{ env.PROJECT_NAME }}
+            sudo chown -R ${{ env.REMOTE_USER }}:${{ env.REMOTE_GROUP }} /opt/git/${{ env.PROJECT_NAME }}
           EOF
 
       - name: Rsync deploy
         run: |
           rsync -az --delete \
             -e "ssh -o StrictHostKeyChecking=no -p 22" ./ \
-            ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }}:/opt/${{ env.PROJECT_NAME }}/
+            ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }}:/opt/git/${{ env.PROJECT_NAME }}/
