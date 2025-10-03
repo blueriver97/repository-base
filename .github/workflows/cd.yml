@@ -36,13 +36,15 @@ jobs:
         # workflow_dispatch의 입력값과 matrix의 environment가 일치할 때만 실행
         if: (github.ref == 'refs/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@v1
+        env:
+          USER_NAME: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
         with:
           host: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_HOST || secrets.PROD_HOST }}
           username: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_USER || secrets.PROD_USER }}
           key: ${{ github.event.inputs.environment == 'dev' && secrets.DEV_DEPLOY_KEY || secrets.PROD_DEPLOY_KEY }}
           script: |
-            sudo mkdir -p /opt/${{ env.PROJECT_NAME }}
-            sudo chown -R ${{ matrix.user }}:${{ matrix.user }} /opt/${{ env.PROJECT_NAME }}
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S mkdir -p /opt/${{ env.PROJECT_NAME }}
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S chown -R $USER_NAME:$USER_NAME /opt/${{ env.PROJECT_NAME }}
 
       - name: Deploy code
         if: (github.ref == 'refs/heads/develop' && github.event.inputs.environment == 'dev') || github.ref == 'refs/heads/main'
