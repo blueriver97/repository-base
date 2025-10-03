@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     # 입력받은 environment 값으로 strategy를 설정합니다.
     # develop branch --> only dev, main branch --> dev, prod
     strategy:
