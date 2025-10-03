@@ -28,11 +28,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - branch: develop
+          - branch: refs/heads/develop
             environment: dev
-          - branch: main
+          - branch: refs/heads/main
             environment: dev
-          - branch: main
+          - branch: refs/heads/main
             environment: prod
 
     steps:
