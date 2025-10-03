@@ -32,20 +32,14 @@ from_allowed_branch() {
 	merge_branch_type=$(echo "$merge_branch" | cut -d'/' -f1)
 
 	# 현재 브랜치에 따른 허용된 병합 소스 브랜치 목록 설정
-	if [ "$current_branch_type" = "main" ]; then
-		ALLOWED_BRANCHES="main release hotfix"
-	elif [ "$current_branch_type" = "release" ]; then
-		ALLOWED_BRANCHES="release develop"
-	elif [ "$current_branch_type" = "hotfix" ]; then
-		ALLOWED_BRANCHES="hotfix"
-	elif [ "$current_branch_type" = "develop" ]; then
-		ALLOWED_BRANCHES="hotfix release develop feature"
-	elif [ "$current_branch_type" = "feature" ]; then
-		ALLOWED_BRANCHES="feature"
-	else
-		# main 또는 develop이 아닌 경우에는 병합을 허용하지 않음
-		ALLOWED_BRANCHES=""
-	fi
+    case "$current_branch_type" in
+        main)    ALLOWED_BRANCHES="main release hotfix" ;;
+        release) ALLOWED_BRANCHES="release develop" ;;
+        hotfix)  ALLOWED_BRANCHES="hotfix" ;;
+        develop) ALLOWED_BRANCHES="hotfix release develop feature" ;;
+        feature) ALLOWED_BRANCHES="feature" ;;
+        *)       ALLOWED_BRANCHES="" ;;
+    esac
 
 	# 병합하려는 브랜치가 허용된 목록에 포함되어 있는지 확인
 	allowed=$(echo "$ALLOWED_BRANCHES" | grep -w "$merge_branch_type")
@@ -53,6 +47,11 @@ from_allowed_branch() {
 	# 포함되어 있지 않으면 금지된 병합으로 간주
 	[ -z "$allowed" ]
 }
+
+# 'git commit --amend' 명령은 아래 작업 패스
+if [ "$2" = "commit" ]; then
+	exit 0
+fi
 
 # 주요 로직
 if merge "$@" && from_allowed_branch; then
@@ -75,17 +74,27 @@ if [ "$current_branch_type" != "main" ]; then
 else
 	LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
 
+	# 버전 패턴 찾기 (예: v0.0.0)
 	if [[ $LAST_COMMIT_MSG =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
 		major=${BASH_REMATCH[1]}
 		minor=${BASH_REMATCH[2]}
 		patch=${BASH_REMATCH[3]}
-		new_patch=$((patch + 1))
-		new_version="v${major}.${minor}.${new_patch}: "
+
+		if [[ $patch -ge 100 ]]; then
+      # PATCH(Z) 버전이 100 이상이면, MINOR(Y) 버전을 1 올리고 PATCH는 1로 리셋
+      new_minor=$((minor + 1))
+      new_patch=1
+      new_version="v${major}.${new_minor}.${new_patch}"
+    else
+      # 100 미만이면, 기존처럼 PATCH(Z) 버전만 1 올립니다.
+      new_patch=$((patch + 1))
+      new_version="v${major}.${minor}.${new_patch}"
+    fi
 	else
-		new_version="v0.0.1: "
+		new_version="v0.0.1"
 	fi
 
-	echo "$new_version" >"$TEMP_FILE"
+	echo "$new_version: " >"$TEMP_FILE"
 	echo "#$LAST_COMMIT_MSG" >>"$TEMP_FILE"
 	cat "$COMMIT_MSG_FILE" >>"$TEMP_FILE"
 	mv "$TEMP_FILE" "$COMMIT_MSG_FILE"
