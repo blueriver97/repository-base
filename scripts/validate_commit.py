@@ -7,7 +7,8 @@ import subprocess
 def get_current_branch():
     try:
         return subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"]).decode("utf-8").strip()
-    except:
+    except Exception as e:
+        sys.stderr.write(f"Unexpected error in get_current_branch: {e}\n")
         return ""
 
 
