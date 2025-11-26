@@ -6,6 +6,7 @@ Desktop.ini
 
 # Node.js 관련 파일
 node_modules/
+package-lock.json
 
 # Python 관련 파일
 *.pyc
