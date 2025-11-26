@@ -6,7 +6,7 @@ COMMIT_SOURCE="$2"
 SHA1="$3"
 
 # 1. 예외 처리: Merge, Amend, 혹은 이미 메시지가 있는 경우 건너뜀
-if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "commit" ]; then
+if [[ "$COMMIT_SOURCE" = "merge" ]] || [[ "$COMMIT_SOURCE" = "commit" ]]; then
     exit 0
 fi
 
@@ -29,7 +29,7 @@ RAW_OUTPUT=$(CI=1 oco --fg 2>&1 || true)
 
 # 4. 메시지 추출 (구분선 파싱)
 GENERATED_MSG=$(echo "$RAW_OUTPUT" | awk '/^——————————————————$/ {if (p) exit; p=1; next} p')
-if [ -z "$GENERATED_MSG" ]; then
+if [[ -z "$GENERATED_MSG" ]]; then
     # 패턴으로 찾기
     # ^(feat|...): 커밋 타입으로 시작하고
     # (\(.*\))?: 옵션으로 스코프가 있으며
@@ -38,16 +38,16 @@ if [ -z "$GENERATED_MSG" ]; then
     GENERATED_MSG=$(echo "$RAW_OUTPUT" | grep -E '^(feat|fix|docs|style|refactor|perf|test|chore|revert|build|ci)(\(.*\))?:' | head -n 1)
 fi
 # 접두어(feat:) 제거
-if [ -n "$GENERATED_MSG" ]; then
+if [[ -n "$GENERATED_MSG" ]]; then
     CLEAN_MSG=$(echo "$GENERATED_MSG" | sed -E 's/^(feat|fix|docs|style|refactor|perf|test|chore|revert|build|ci)(\(.*\))?:\s*//')
 
     # ${#CLEAN_MSG}: 문자열 길이 반환
-    if [ ${#CLEAN_MSG} -gt 0 ]; then
+    if [[ ${#CLEAN_MSG} -gt 0 ]]; then
         GENERATED_MSG="$CLEAN_MSG"
     fi
 fi
 
-if [ -z "$GENERATED_MSG" ]; then
+if [[ -z "$GENERATED_MSG" ]]; then
     echo "메시지 생성 실패. 기본 에디터를 엽니다."
     # echo "# [Debug] AI Output Log:" >> "$COMMIT_MSG_FILE"
     # echo "$RAW_OUTPUT" | sed 's/^/# /' >> "$COMMIT_MSG_FILE"
@@ -55,7 +55,7 @@ if [ -z "$GENERATED_MSG" ]; then
 fi
 
 # 5. 브랜치별 메시지 가공 (기존 로직 유지)
-if [ "$current_branch" = "main" ]; then
+if [[ "$current_branch" = "main" ]]; then
     # Main 브랜치: 버전 업 로직
     LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
 

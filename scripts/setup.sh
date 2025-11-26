@@ -25,16 +25,21 @@ setup_git_config() {
   git config fetch.prune true
   git config merge.ff true
   git config alias.recommit "commit --amend"
+  return
 }
 
 check_error() {
-    if [ $1 -ne 0 ]; then
-        echo -e "${FAILURE_TAG} $2"
+    local exit_code=$1  # 첫 번째 인자: 실행 결과(Exit Code)
+    local message=$2    # 두 번째 인자: 출력할 메시지
+
+    if [[ $exit_code -ne 0 ]]; then
+        echo -e "${FAILURE_TAG} $message"
         echo -e "${RED}오류가 발생하여 스크립트를 중단합니다.${NC}"
         exit 1
     else
-        echo -e "${SUCCESS_TAG} $2"
+        echo -e "${SUCCESS_TAG} $message"
     fi
+    return
 }
 
 echo "프로젝트 초기 설정을 시작합니다..."
@@ -48,7 +53,7 @@ if ! command -v gh &> /dev/null; then
     # OS 식별 및 가이드 출력
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "   * macOS: brew install gh"
-    elif [ -f /etc/os-release ]; then
+    elif [[ -f /etc/os-release ]]; then
         . /etc/os-release
         case "$ID" in
             ubuntu|debian)
@@ -80,18 +85,18 @@ else
             echo -e "${SUCCESS_TAG} SONAR_TOKEN 이미 설정됨"
         else
             # 등록되어 있지 않을 때만 입력 받기
-            if [ -z "$SONAR_TOKEN" ]; then
+            if [[ -z "$SONAR_TOKEN" ]]; then
                 echo -n "   > SonarCloud Token 입력 (없으면 Enter): "
                 read -s INPUT_TOKEN
                 echo ""
 
-                if [ -n "$INPUT_TOKEN" ]; then
+                if [[ -n "$INPUT_TOKEN" ]]; then
                     export SONAR_TOKEN="$INPUT_TOKEN"
                 fi
             fi
 
             # GitHub 저장소에 시크릿 업로드
-            if [ -n "$SONAR_TOKEN" ]; then
+            if [[ -n "$SONAR_TOKEN" ]]; then
                 gh secret set SONAR_TOKEN --body "$SONAR_TOKEN"
                 check_error $? "GitHub Repository Secrets에 SONAR_TOKEN 등록"
             else
@@ -104,7 +109,7 @@ fi
 # ---------------------------------------------------------
 # 2. 의존성 패키지 설치
 # ---------------------------------------------------------
-if [ -f "package.json" ]; then
+if [[ -f "package.json" ]]; then
     echo "   > NPM 패키지 설치 중..."
     npm install > /dev/null 2>&1
     check_error $? "NPM 패키지 설치 완료"
@@ -146,15 +151,15 @@ fi
 # ---------------------------------------------------------
 # 3. OpenCommit 설정
 # ---------------------------------------------------------
-if [ -z "$GEMINI_API_KEY" ]; then
+if [[ -z "$GEMINI_API_KEY" ]]; then
     echo -n "   > Gemini API Key 입력 (없으면 Enter): "
     read INPUT_KEY
-    if [ -n "$INPUT_KEY" ]; then
+    if [[ -n "$INPUT_KEY" ]]; then
         export GEMINI_API_KEY="$INPUT_KEY"
     fi
 fi
 
-if [ -n "$GEMINI_API_KEY" ]; then
+if [[ -n "$GEMINI_API_KEY" ]]; then
     echo "   > OpenCommit 설정 적용 중..."
     npx oco config set OCO_API_KEY="$GEMINI_API_KEY" > /dev/null 2>&1
     npx oco config set OCO_AI_PROVIDER=gemini > /dev/null 2>&1
@@ -180,11 +185,11 @@ setup_git_config
 # 5. SonarQube 프로젝트 키 설정
 # ---------------------------------------------------------
 SONAR_FILE="sonar-project.properties"
-if [ -f "$SONAR_FILE" ]; then
+if [[ -f "$SONAR_FILE" ]]; then
     CURRENT_DIR_NAME=$(basename "$PWD")
     ORG_NAME=$(grep "^sonar.organization=" "$SONAR_FILE" | cut -d'=' -f2)
 
-    if [ -z "$ORG_NAME" ]; then ORG_NAME="blueriver97"; fi
+    if [[ -z "$ORG_NAME" ]]; then ORG_NAME="blueriver97"; fi
     NEW_KEY="${ORG_NAME}_${CURRENT_DIR_NAME}"
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
