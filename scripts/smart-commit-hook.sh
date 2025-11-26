@@ -27,18 +27,28 @@ echo "🤖 AI가 커밋 메시지를 작성 중입니다..."
 # || true: oco가 에러로 종료되어도 스크립트가 멈추지 않게 합니다.
 RAW_OUTPUT=$(CI=1 oco --fg 2>&1 || true)
 
-# 구분선(——————————————————) 사이의 텍스트만 추출
+# 4. 메시지 추출 (구분선 파싱)
 GENERATED_MSG=$(echo "$RAW_OUTPUT" | awk '/^——————————————————$/ {if (p) exit; p=1; next} p')
-
-# 만약 파싱에 실패했다면(구분선이 없거나 등), 'feat:' 같은 패턴으로 한 번 더 찾아봄
 if [ -z "$GENERATED_MSG" ]; then
+    # 패턴으로 찾기
+    # ^(feat|...): 커밋 타입으로 시작하고
+    # (\(.*\))?: 옵션으로 스코프가 있으며
+    # :\s+: 콜론 뒤에 공백이 있고
+    # .{5,}: 그 뒤에 최소 5글자 이상의 내용이 있어야 함
     GENERATED_MSG=$(echo "$RAW_OUTPUT" | grep -E '^(feat|fix|docs|style|refactor|perf|test|chore|revert|build|ci)(\(.*\))?:' | head -n 1)
 fi
-# ---------------------------------------------------------
+# 접두어(feat:) 제거
+if [ -n "$GENERATED_MSG" ]; then
+    CLEAN_MSG=$(echo "$GENERATED_MSG" | sed -E 's/^(feat|fix|docs|style|refactor|perf|test|chore|revert|build|ci)(\(.*\))?:\s*//')
+
+    # ${#CLEAN_MSG}: 문자열 길이 반환
+    if [ ${#CLEAN_MSG} -gt 0 ]; then
+        GENERATED_MSG="$CLEAN_MSG"
+    fi
+fi
 
 if [ -z "$GENERATED_MSG" ]; then
     echo "메시지 생성 실패. 기본 에디터를 엽니다."
-    # 디버깅을 위해 실패 로그를 커밋 메시지 주석으로 남겨줌
     # echo "# [Debug] AI Output Log:" >> "$COMMIT_MSG_FILE"
     # echo "$RAW_OUTPUT" | sed 's/^/# /' >> "$COMMIT_MSG_FILE"
     exit 0
