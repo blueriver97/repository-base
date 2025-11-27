@@ -19,12 +19,20 @@
 
 이 템플릿을 사용하기 위해 로컬 환경에 다음 도구들이 설치되어 있어야 합니다.
 
-- Node.js (v18 이상)
-- Python (v3.8 이상, pre-commit 실행)
+- Node.js (v22 이상)
+  - macOS: `brew install node`
+  - Ubuntu: `curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs`
+  - Amazon Linux 2023: `sudo dnf install nodejs`
+
+- Python (v3.11)
+  - macOS: `brew install python@3.11`
+  - Ubuntu: `sudo add-apt-repository ppa:deadsnakes/ppa -y && sudo apt install python3.11 python3.11-venv`
+  - Amazon Linux 2023: `sudo dnf install python3.11 python3.11-devel`
+
 - GitHub CLI (gh) (시크릿 자동 등록)
-  - Mac: brew install gh
-  - Ubuntu: sudo apt install gh
-  - Amazon Linux 2023: sudo dnf install gh
+  - macOS: `brew install gh`
+  - Ubuntu: `sudo apt install gh`
+  - Amazon Linux 2023: `sudo dnf install gh`
 
 ---
 
