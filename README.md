@@ -22,7 +22,7 @@
 - Node.js (v22 이상)
   - macOS: `brew install node`
   - Ubuntu: `curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs`
-  - Amazon Linux 2023: `sudo dnf install nodejs`
+  - Amazon Linux 2023: `sudo dnf install nodejs22`
 
 - Python (v3.11)
   - macOS: `brew install python@3.11`
@@ -32,7 +32,7 @@
 - GitHub CLI (gh) (시크릿 자동 등록)
   - macOS: `brew install gh`
   - Ubuntu: `sudo apt install gh`
-  - Amazon Linux 2023: `sudo dnf install gh`
+  - Amazon Linux 2023: `sudo dnf install 'dnf-command(config-manager)' & sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo & sudo dnf install gh`
 
 ---
 

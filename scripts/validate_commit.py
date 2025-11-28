@@ -41,13 +41,13 @@ def main():
 
     if branch_type in patterns:
         if not re.match(patterns[branch_type], commit_msg):
-            print(f"\n❌ [Error] 커밋 메시지 형식이 브랜치 '{branch_type}' 규칙에 맞지 않습니다.")
+            print(f"\n[Error] 커밋 메시지 형식이 브랜치 '{branch_type}' 규칙에 맞지 않습니다.")
             print(f"   요구 형식: {examples[branch_type]}")
             print(f"   입력된 메시지: {commit_msg}\n")
             sys.exit(1)
     else:
         # main, release 등이 아닌 경우 (예: 로컬 실험용 브랜치)는 통과시킬지, 막을지 결정
-        print(f"\n❌ [Error] 알 수 없는 브랜치 유형입니다: {branch_type}")
+        print(f"\n[Error] 알 수 없는 브랜치 유형입니다: {branch_type}")
         print("   사용 가능한 유형: main, release, hotfix, develop, feature")
         sys.exit(1)
 

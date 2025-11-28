@@ -18,8 +18,6 @@ INFO_TAG="[진행]"
 # 함수
 # ---------------------------------------------------------
 setup_git_config() {
-  git config user.name "blueriver97"
-  git config user.email "rladudwo0908@naver.com"
   git config core.editor "vim"
   git config core.quotepath false
   git config fetch.prune true
@@ -86,9 +84,7 @@ else
         else
             # 등록되어 있지 않을 때만 입력 받기
             if [[ -z "$SONAR_TOKEN" ]]; then
-                echo -n "   > SonarCloud Token 입력 (없으면 Enter): "
-                read -s INPUT_TOKEN
-                echo ""
+                read -sp "   > SonarCloud Token 입력 (없으면 Enter): " INPUT_TOKEN
 
                 if [[ -n "$INPUT_TOKEN" ]]; then
                     export SONAR_TOKEN="$INPUT_TOKEN"
@@ -152,8 +148,7 @@ fi
 # 3. OpenCommit 설정
 # ---------------------------------------------------------
 if [[ -z "$GEMINI_API_KEY" ]]; then
-    echo -n "   > Gemini API Key 입력 (없으면 Enter): "
-    read INPUT_KEY
+    read -sp "   > Gemini API Key 입력 (없으면 Enter): " INPUT_KEY
     if [[ -n "$INPUT_KEY" ]]; then
         export GEMINI_API_KEY="$INPUT_KEY"
     fi
@@ -179,8 +174,26 @@ fi
 # ---------------------------------------------------------
 pre-commit install --hook-type pre-commit --hook-type commit-msg --hook-type prepare-commit-msg > /dev/null 2>&1
 check_error $? "Git Hooks 설치 완료"
-setup_git_config
 
+if [[ -z "$GIT_USER" ]]; then
+    read -p "   > Git Username 입력: " INPUT_USER
+    if [[ -n "$INPUT_USER" ]]; then
+        export GIT_USER="$INPUT_USER"
+    fi
+
+fi
+
+if [[ -z "$GIT_EMAIL" ]]; then
+    read -p "   > Git E-mail 입력: " INPUT_EMAIL
+    if [[ -n "$INPUT_EMAIL" ]]; then
+        export GIT_EMAIL="$INPUT_EMAIL"
+    fi
+fi
+check_error $? "Git 사용자 설정 완료"
+
+git config user.name "$GIT_USER"
+git config user.email "$GIT_EMAIL"
+setup_git_config
 # ---------------------------------------------------------
 # 5. SonarQube 프로젝트 키 설정
 # ---------------------------------------------------------

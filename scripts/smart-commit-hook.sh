@@ -12,13 +12,13 @@ fi
 
 # 2. OpenCommit 설치 확인
 if ! command -v oco &> /dev/null; then
-    echo "⚠️ OpenCommit이 설치되지 않아 AI 메시지 생성을 건너뜁니다."
+    echo "OpenCommit이 설치되지 않아 AI 메시지 생성을 건너뜁니다."
     exit 0
 fi
 
 # 3. 현재 브랜치 정보
 current_branch=$(git branch --show-current)
-echo "🤖 AI가 커밋 메시지를 작성 중입니다..."
+echo "AI가 커밋 메시지를 작성 중입니다..."
 
 # 4. AI 메시지 생성 및 파싱 (핵심 수정 부분)
 # ---------------------------------------------------------
