@@ -85,7 +85,7 @@ else
             # 등록되어 있지 않을 때만 입력 받기
             if [[ -z "$SONAR_TOKEN" ]]; then
                 read -sp "   > SonarCloud Token 입력 (없으면 Enter): " INPUT_TOKEN
-
+                echo ""
                 if [[ -n "$INPUT_TOKEN" ]]; then
                     export SONAR_TOKEN="$INPUT_TOKEN"
                 fi
@@ -149,6 +149,7 @@ fi
 # ---------------------------------------------------------
 if [[ -z "$GEMINI_API_KEY" ]]; then
     read -sp "   > Gemini API Key 입력 (없으면 Enter): " INPUT_KEY
+    echo ""
     if [[ -n "$INPUT_KEY" ]]; then
         export GEMINI_API_KEY="$INPUT_KEY"
     fi
@@ -177,6 +178,7 @@ check_error $? "Git Hooks 설치 완료"
 
 if [[ -z "$GIT_USER" ]]; then
     read -p "   > Git Username 입력: " INPUT_USER
+
     if [[ -n "$INPUT_USER" ]]; then
         export GIT_USER="$INPUT_USER"
     fi
@@ -185,6 +187,7 @@ fi
 
 if [[ -z "$GIT_EMAIL" ]]; then
     read -p "   > Git E-mail 입력: " INPUT_EMAIL
+
     if [[ -n "$INPUT_EMAIL" ]]; then
         export GIT_EMAIL="$INPUT_EMAIL"
     fi
