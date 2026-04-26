@@ -147,7 +147,7 @@ if [[ -n "$GEMINI_API_KEY" ]]; then
     echo "   > OpenCommit 설정 적용 중..."
     oco config set OCO_API_KEY="$GEMINI_API_KEY" > /dev/null 2>&1
     oco config set OCO_AI_PROVIDER=gemini > /dev/null 2>&1
-    oco config set OCO_MODEL=gemini-3.1-flash-lite > /dev/null 2>&1
+    oco config set OCO_MODEL=gemini-3.1-flash-lite-preview > /dev/null 2>&1
     oco config set OCO_LANGUAGE=ko > /dev/null 2>&1
     oco config set OCO_GITPUSH=false > /dev/null 2>&1
     oco config set OCO_TOKENS_MAX_OUTPUT=512 > /dev/null 2>&1
