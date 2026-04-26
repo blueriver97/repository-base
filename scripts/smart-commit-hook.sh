@@ -6,8 +6,17 @@ COMMIT_SOURCE="$2"
 SHA1="$3"
 
 # 1. 예외 처리: Merge, Amend, 혹은 이미 메시지가 있는 경우 건너뜀
-if [[ "$COMMIT_SOURCE" = "merge" ]] || [[ "$COMMIT_SOURCE" = "commit" ]]; then
+if [[ "$COMMIT_SOURCE" = "merge" ]] || [[ "$COMMIT_SOURCE" = "commit" ]] || [[ "$COMMIT_SOURCE" = "message" ]]; then
     exit 0
+fi
+
+# pre-commit 프레임워크는 COMMIT_SOURCE를 전달하지 않으므로,
+# 커밋 메시지 파일에 이미 내용이 있으면 (-m 사용) 건너뜀
+if [[ -n "$COMMIT_MSG_FILE" ]] && [[ -f "$COMMIT_MSG_FILE" ]]; then
+    MSG_CONTENT=$(grep -v '^#' "$COMMIT_MSG_FILE" | grep -v '^$' | head -1)
+    if [[ -n "$MSG_CONTENT" ]]; then
+        exit 0
+    fi
 fi
 
 # 2. OpenCommit 설치 확인
