@@ -102,19 +102,6 @@ else
     if ! gh auth status &> /dev/null; then
         echo -e "${WARN_TAG} GitHub CLI 로그인이 필요합니다."
         gh auth login
-    else
-        # SONAR_TOKEN 등록 여부 확인 및 설정
-        if ! gh secret list | grep -q "SONAR_TOKEN"; then
-            if [[ -z "$SONAR_TOKEN" ]]; then
-                read -sp "   > SonarCloud 토큰을 입력하세요 (건너뛰려면 Enter): " INPUT_TOKEN
-                echo ""
-                [[ -n "$INPUT_TOKEN" ]] && export SONAR_TOKEN="$INPUT_TOKEN"
-            fi
-            if [[ -n "$SONAR_TOKEN" ]]; then
-                gh secret set SONAR_TOKEN --body "$SONAR_TOKEN"
-                check_error $? "GitHub Secrets에 SONAR_TOKEN 등록 완료"
-            fi
-        fi
     fi
 fi
 
@@ -187,25 +174,6 @@ if [[ -n "$GIT_USER" && -n "$GIT_EMAIL" ]]; then
     git config user.email "$GIT_EMAIL"
     setup_git_config
     check_error $? "Git 사용자 및 기본 설정 완료"
-fi
-
-# ---------------------------------------------------------
-# 5. SonarQube 프로젝트 키 자동화
-# ---------------------------------------------------------
-SONAR_FILE="sonar-project.properties"
-if [[ -f "$SONAR_FILE" ]]; then
-    CURRENT_DIR_NAME=$(basename "$PWD")
-    ORG_NAME=$(grep "^sonar.organization=" "$SONAR_FILE" | cut -d'=' -f2)
-    [[ -z "$ORG_NAME" ]] && ORG_NAME="blueriver97"
-    NEW_KEY="${ORG_NAME}_${CURRENT_DIR_NAME}"
-
-    # 운영체제별 sed 명령어 차이 대응
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/^sonar.projectKey=.*/sonar.projectKey=$NEW_KEY/" "$SONAR_FILE"
-    else
-        sed -i "s/^sonar.projectKey=.*/sonar.projectKey=$NEW_KEY/" "$SONAR_FILE"
-    fi
-    check_error $? "SonarQube 프로젝트 키 업데이트 완료: $NEW_KEY"
 fi
 
 echo -e "${GREEN}모든 환경 설정이 성공적으로 완료되었습니다.${NC}"
